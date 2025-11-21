@@ -1,58 +1,51 @@
-const sheetId = "1ywr6P85D2mcCLzH2V0XXEc7JvQOOevwIn67UjEuE2Z4";
-const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
+// example database – later we can connect it to Google Sheets
+const database = [
+  "example entry",
+  "another sample",
+  "something else",
+  "test phrase"
+];
 
-let data = [];
+const resultsList = document.getElementById("results");
+const searchInput = document.getElementById("search");
+const minLengthInput = document.getElementById("minLength");
+const randomBtn = document.getElementById("randomBtn");
 
-async function fetchSheet() {
-  const res = await fetch(sheetUrl);
-  const text = await res.text();
-  // Google wraps JSON in a callback, need to extract it
-  const json = JSON.parse(text.substring(text.indexOf("(") + 1, text.lastIndexOf(")")));
-  const rows = json.table.rows;
-  
-  data = rows.map(r => {
-    return {
-      text: r.c[0] ? r.c[0].v : "",
-      tags: r.c[1] ? r.c[1].v.split(",").map(s => s.trim()) : [],
-      length: r.c[0] ? r.c[0].v.length : 0
-    };
-  });
-  
-  renderList(data);
-}
+// render full list on load
+renderList(database);
 
 function renderList(list) {
-  const ul = document.getElementById("results");
-  ul.innerHTML = "";
+  resultsList.innerHTML = "";
   list.forEach(item => {
     const li = document.createElement("li");
-    li.textContent = item.text;
-    ul.appendChild(li);
+    li.textContent = item;
+    resultsList.appendChild(li);
   });
 }
 
-function filter() {
-  const search = document.getElementById("search").value.toLowerCase();
-  const minLength = parseInt(document.getElementById("minLength").value, 10) || 0;
-  
-  const filtered = data.filter(item => {
-    const matchesText = item.text.toLowerCase().includes(search);
-    const matchesLength = item.length >= minLength;
-    return matchesText && matchesLength;
-  });
-  
+// live search
+searchInput.addEventListener("input", () => {
+  updateFiltered();
+});
+
+minLengthInput.addEventListener("input", () => {
+  updateFiltered();
+});
+
+function updateFiltered() {
+  const phrase = searchInput.value.toLowerCase();
+  const minLen = Number(minLengthInput.value) || 0;
+
+  const filtered = database.filter(item =>
+    item.toLowerCase().includes(phrase) &&
+    item.length >= minLen
+  );
+
   renderList(filtered);
 }
 
-function showRandom() {
-  if (!data.length) return;
-  const idx = Math.floor(Math.random() * data.length);
-  const item = data[idx];
-  alert(item.text);
-}
-
-document.getElementById("search").addEventListener("input", filter);
-document.getElementById("minLength").addEventListener("input", filter);
-document.getElementById("randomBtn").addEventListener("click", showRandom);
-
-fetchSheet();
+// random entry
+randomBtn.addEventListener("click", () => {
+  const random = database[Math.floor(Math.random() * database.length)];
+  renderList([random]);
+});
